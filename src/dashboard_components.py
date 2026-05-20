@@ -4,28 +4,29 @@ Created on Wed May 17 09:30:04 2023
 
 @author: rhanusa
 """
-import numpy as np
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
-from plant_components import pph
 import math
-import weather_energy_components as wec
-import plant_components as pc
-import input_specs as ins
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+from . import weather_energy_components as wec
+from . import plant_components as pc
+from . import input_specs as ins
+from .plant_components import pph
 
 # Tab 1
 
 graph_margin = dict(b=60, l=20, r=20, t=60)
-bat_start_charge = 0.5*ins.battery_specs["max_charge"]
+bat_start_charge = 0.5 * ins.battery_specs["max_charge"]
 
 # Length of graphs' x axes.
 idle_start_length = 500
-x = [i*60/pph for i in range(-idle_start_length,1)]
+x = [i * 60 / pph for i in range(-idle_start_length, 1)]
 
 num_periods = wec.data_length*pph + idle_start_length
 
 # Create arrays to store all calculated data that will be displayed.
-# This helps minimize the calculations occuring in the callback function and
+# This helps minimize the calculations occurring in the callback function and
 # lets the dashboard update more smoothly
 r2_sx_out = np.zeros(num_periods)
 r1_e = np.zeros(num_periods)
@@ -51,8 +52,8 @@ bat_sp_arr = np.zeros(num_periods)
 e_t_arr = np.zeros(num_periods)
 d_arr = np.zeros(num_periods)
 
-total_grid_hourly = np.zeros([24,12])
-hour_tally = np.zeros([24,12])
+total_grid_hourly = np.zeros([24, 12])
+hour_tally = np.zeros([24, 12])
 month_tally = np.zeros(12)
 
 # Initiate necessary variables
@@ -76,19 +77,19 @@ prev_hour = 0
 forecast_arr = np.zeros(6)
 
 # Calculate conditions at each hourly state and store in arrays
-for hour in range(wec.data_length-12):
+for hour in range(wec.data_length - 12):
     state = wec.Hourly_state(hour, ins.solar_panel_specs, ins.wind_turbine_specs)
 
     # Forecast data
     for j in range(6):
-        future_state = wec.Hourly_state(hour+j+1, ins.solar_panel_specs, ins.wind_turbine_specs)
+        future_state = wec.Hourly_state(hour + j + 1, ins.solar_panel_specs, ins.wind_turbine_specs)
         forecast_arr[j] = wec.calc_generated_kw(future_state)
     
     forecast_aggregated = (sum(forecast_arr[0:3]), sum(forecast_arr[3:7]))
 
     # Allow for multiple periods per hour
     for i in range(pph):
-        period = hour*pph + i + idle_start_length
+        period = hour * pph + i + idle_start_length
             
         # Energy flowing to the plant
         energy_generated = wec.calc_generated_kw(state)
@@ -96,14 +97,14 @@ for hour in range(wec.data_length-12):
         
         # Energy distribution for current period
         energy_tally, r2_e_prev, energy_flow = wec.distribute_energy(energy_generated,
-                                                        generated_kw[period-pph],
-                                                        energy_tally, 
-                                                        r2_e_prev, 
-                                                        energy_flow, 
-                                                        battery, 
-                                                        ins.b_sp_constants,
-                                                        reactor2,
-                                                        forecast_aggregated)
+                                                                     generated_kw[period-pph],
+                                                                     energy_tally,
+                                                                     r2_e_prev,
+                                                                     energy_flow,
+                                                                     battery,
+                                                                     ins.b_sp_constants,
+                                                                     reactor2,
+                                                                     forecast_aggregated)
         
         # Update battery charge
         battery.charge += wec.battery_charge_differential(energy_flow.to_battery, battery)
@@ -140,32 +141,34 @@ for hour in range(wec.data_length-12):
         
         # Add up energy taken from grid. This will be used for graph in Tab 2
         if energy_flow.from_grid > 0: 
-            total_grid_hourly[state.hour_of_day][state.month-1] += energy_flow.from_grid/pph
+            total_grid_hourly[state.hour_of_day][state.month-1] += energy_flow.from_grid / pph
         
-        if prev_hour != state.hour_of_day: hour_tally[state.hour_of_day][state.month-1] += 1
-        if prev_month != state.month: month_tally[state.month-1] += 1
+        if prev_hour != state.hour_of_day:
+            hour_tally[state.hour_of_day][state.month-1] += 1
+        if prev_month != state.month:
+            month_tally[state.month-1] += 1
         
         prev_hour = state.hour_of_day
         prev_month = state.month
 
 # Energy allocation figure
-fig_e_allo = make_subplots(rows=1,cols=1,
-                           specs=[[dict(secondary_y= True)]])
+fig_e_allo = make_subplots(rows=1, cols=1,
+                           specs=[[dict(secondary_y=True)]])
 fig_e_allo.add_trace(go.Scatter(x=[], y=[], mode="lines", 
                                 name="Energy produced by renewables"),
                      row=1, col=1, secondary_y=False)
-fig_e_allo.add_trace(go.Scatter(x=[], y=[], mode= "lines", 
+fig_e_allo.add_trace(go.Scatter(x=[], y=[], mode="lines",
                                 name="Energy allocated to plant"),
                      row=1, col=1, secondary_y=False)
-fig_e_allo.add_trace(go.Scatter(x=[], y=[], mode= "lines", 
+fig_e_allo.add_trace(go.Scatter(x=[], y=[], mode="lines",
                                 name="Battery charge"),
                      row=1, col=1, secondary_y=True)
 fig_e_allo.update_xaxes(title_text="Minutes before present", 
-                        range=[-idle_start_length,0],
+                        range=[-idle_start_length, 0],
                         row=1, col=1)
-fig_e_allo.update_yaxes(title_text="kW produced/consumed", range=[0,1500], 
+fig_e_allo.update_yaxes(title_text="kW produced/consumed", range=[0, 1500],
                         secondary_y=False, row=1, col=1)
-fig_e_allo.update_yaxes(title_text="kWh stored in battery", range=[0,battery.max_charge*1.05], 
+fig_e_allo.update_yaxes(title_text="kWh stored in battery", range=[0, battery.max_charge * 1.05],
                         secondary_y=True, row=1, col=1)
 fig_e_allo.update_layout(title_text="Energy Allocation", title_x=0.5,
                          title=dict(yref="paper",
@@ -179,13 +182,13 @@ fig_e_allo.update_layout(title_text="Energy Allocation", title_x=0.5,
                          margin=graph_margin)
 
 # Reactor 2 output figure
-fig_r2 = make_subplots(rows=1,cols=1, specs=[[dict(secondary_y= True)]])
-fig_r2.add_trace(go.Scatter(x=[], y=[], mode= "lines", name="Sx produced"),
-                     row=1, col=1, secondary_y=False)
-fig_r2.add_trace(go.Scatter(x=[], y=[], mode= "lines", name="Energy input"),
-                     row=1, col=1, secondary_y=True)
-fig_r2.update_xaxes(title_text="Minutes before present", range=[-500,0],
-                          row=1, col=1)
+fig_r2 = make_subplots(rows=1, cols=1, specs=[[dict(secondary_y=True)]])
+fig_r2.add_trace(go.Scatter(x=[], y=[], mode="lines", name="Sx produced"),
+                 row=1, col=1, secondary_y=False)
+fig_r2.add_trace(go.Scatter(x=[], y=[], mode="lines", name="Energy input"),
+                 row=1, col=1, secondary_y=True)
+fig_r2.update_xaxes(title_text="Minutes before present", range=[-500, 0],
+                    row=1, col=1)
 fig_r2.update_yaxes(title_text="mol Sx per hour", range=[0,200], 
                     secondary_y=False, row=1, col=1)
 fig_r2.update_yaxes(title_text="kW", range=[0,1200], 
@@ -199,17 +202,17 @@ fig_r2.update_layout(title_text="Sx production over time", title_x=0.5,
                      margin=graph_margin)
 
 # Reactor 2 reaction curve figure
-r2_rxn_curve_x = np.linspace(0,600,20)
+r2_rxn_curve_x = np.linspace(0, 600, 20)
 r2_rxn_curve_y= [reactor2.ss_output(i) for i in r2_rxn_curve_x]
 
-fig_r2_rxn = make_subplots(rows=1,cols=1)
+fig_r2_rxn = make_subplots(rows=1, cols=1)
 fig_r2_rxn.add_trace(go.Scatter(x=[], y=[], mode="lines", 
                                 name="R2 reaction curve"), row=1, col=1)
 fig_r2_rxn.add_trace(go.Scatter(x=[], y=[], marker=dict(color="red", size=20),
                                 mode="markers", name="Current state"), 
                      row=1, col=1)
-fig_r2_rxn.update_xaxes(title_text="kW", range=[0,600], row=1, col=1)
-fig_r2_rxn.update_yaxes(title_text="mol Sx per hour", range=[0,60], 
+fig_r2_rxn.update_xaxes(title_text="kW", range=[0, 600], row=1, col=1)
+fig_r2_rxn.update_yaxes(title_text="mol Sx per hour", range=[0, 60],
                         row=1, col=1)
 fig_r2_rxn.update_layout(title_text="Steady state Sx output versus energy", 
                          title_x=0.5,
@@ -224,9 +227,9 @@ fig_r2_rxn.update_layout(title_text="Steady state Sx output versus energy",
                          margin=graph_margin)
 
 
-def update(n_intervals, start_watch, counter):
+def update_data(n_intervals, start_watch, counter):
     
-    def data_update(counter):
+    def data_update_inner_loop(counter):
         period = counter + idle_start_length
         
         # Energy to battery
@@ -243,9 +246,9 @@ def update(n_intervals, start_watch, counter):
         bat_lvl_full = battery_charge[period]
         bat_lvl_empty = battery.max_charge - battery_charge[period]
         fig_bat_lvl = go.Figure(data=[go.Bar(x=[1], y=[bat_lvl_full], 
-                                              marker_color="green"),
+                                             marker_color="green"),
                                       go.Bar(x=[1], y=[bat_lvl_empty],  
-                                              marker_color="gray")])
+                                             marker_color="gray")])
         fig_bat_lvl.update_layout(title_text="Battery Level", 
                                   title_x=0.5, title_y=0.96,
                                   barmode='stack', paper_bgcolor="rgba(0,0,0,0)",
@@ -299,13 +302,13 @@ def update(n_intervals, start_watch, counter):
         r1_1_available = 100 - r1_1_saturation
         fig_lvl_r1_1 = go.Figure(data=[go.Bar(x=[1], y=[r1_1_saturation], 
                                               marker_color="aqua"),
-                                      go.Bar(x=[1], y=[r1_1_available],  
+                                       go.Bar(x=[1], y=[r1_1_available],
                                               marker_color="silver")])
         fig_lvl_r1_1.update_layout(title_text="", title_x=0.5, title_y=0.96,
-                                  barmode='stack', paper_bgcolor="rgba(0,0,0,0)",
-                                  plot_bgcolor='rgba(0, 0, 0, 0)', showlegend=False,
-                                  margin=dict(l=20, r=20, t=20, b=20), height=150,
-                                  width=100)
+                                   barmode='stack', paper_bgcolor="rgba(0,0,0,0)",
+                                   plot_bgcolor='rgba(0, 0, 0, 0)', showlegend=False,
+                                   margin=dict(l=20, r=20, t=20, b=20), height=150,
+                                   width=100)
         fig_lvl_r1_1.update_xaxes(showticklabels=False)
         fig_lvl_r1_1.update_yaxes(tickmode="array", 
                                   tickvals=[round(r1_1_saturation)])
@@ -353,13 +356,13 @@ def update(n_intervals, start_watch, counter):
         sx_available = 100 - sx_saturation
         fig_sx_sat = go.Figure(data=[go.Bar(x=[1], y=[sx_saturation], 
                                             marker_color="yellow"),
-                                      go.Bar(x=[1], y=[sx_available], 
-                                              marker_color="silver")])
+                                     go.Bar(x=[1], y=[sx_available],
+                                            marker_color="silver")])
         fig_sx_sat.update_layout(title_text="", title_x=0.5, title_y=0.96,
-                                  barmode='stack', paper_bgcolor="rgba(0,0,0,0)",
-                                  plot_bgcolor='rgba(0, 0, 0, 0)', showlegend=False,
-                                  margin=dict(l=20, r=20, t=20, b=20), height=150,
-                                  width=100)
+                                 barmode='stack', paper_bgcolor="rgba(0,0,0,0)",
+                                 plot_bgcolor='rgba(0, 0, 0, 0)', showlegend=False,
+                                 margin=dict(l=20, r=20, t=20, b=20), height=150,
+                                 width=100)
         fig_sx_sat.update_xaxes(showticklabels=False)
         fig_sx_sat.update_yaxes(tickmode="array", tickvals=[round(sx_saturation)])
         
@@ -368,50 +371,50 @@ def update(n_intervals, start_watch, counter):
 
         e_allocation = [
             dict(x=[x, x, x], 
-                  y=[
-                      [generated_kw[i] for i in range(counter,period + 1)],
-                      [consumed_kw[i] for i in range(counter,period + 1)],
-                      [battery_charge[i] for i in range(counter,period + 1)]
+                 y=[
+                      [generated_kw[i] for i in range(counter, period + 1)],
+                      [consumed_kw[i] for i in range(counter, period + 1)],
+                      [battery_charge[i] for i in range(counter, period + 1)]
                     ]
-                  ),
-                [0,1,2], 
-                idle_start_length + 1, 
-                idle_start_length + 1, 
-                idle_start_length + 1]
+                 ),
+            [0, 1, 2],
+            idle_start_length + 1,
+            idle_start_length + 1,
+            idle_start_length + 1]
         
         r2_updates = [
             dict(x=[x, x], 
-                  y=[
+                 y=[
                       [r2_sx_out[i] for i in range(counter,period + 1)],
                       [r2_e[i] for i in range(counter,period + 1)]
                     ]
-                  ),
-                [0,1], 
-                idle_start_length + 1, 
-                idle_start_length + 1] 
+                 ),
+            [0, 1],
+            idle_start_length + 1,
+            idle_start_length + 1]
 
         r2_rxn_updates = [
-                dict(x=[r2_rxn_curve_x, [r2_e[period]]*20], 
-                      y=[
+                dict(x=[r2_rxn_curve_x, [r2_e[period]] * 20], 
+                     y=[
                           r2_rxn_curve_y,
-                          [reactor2.ss_output(r2_e[period])]*20
+                          [reactor2.ss_output(r2_e[period])] * 20
                         ]
-                      ),
-                    [0,1], 
-                    20, 
-                    1]
+                     ),
+                [0, 1],
+                20,
+                1]
 
-        return (round(kw_to_battery,1), 
+        return (round(kw_to_battery ,1), 
                 time.strftime("%d-%m-%Y %H:%M"), 
                 fig_bat_lvl, 
                 img_bat,
                 img_windmill,
                 img_grid, 
-                round(kw_gen,1), 
-                round(grid_e[period],1), 
-                round(r1_e[period],2), 
-                round(r2_e[period],1),
-                round(condenser_e[period],2), 
+                round(kw_gen, 1), 
+                round(grid_e[period], 1), 
+                round(r1_e[period], 2), 
+                round(r2_e[period], 1),
+                round(condenser_e[period], 2), 
                 img_r1_status,
                 fig_lvl_r1_1, 
                 fig_lvl_r1_2, 
@@ -425,10 +428,11 @@ def update(n_intervals, start_watch, counter):
                 counter)
     
     if start_watch:
-        return data_update(counter+1)
+        return data_update_inner_loop(counter + 1)
     
     else:
-        return data_update(counter)
+        return data_update_inner_loop(counter)
+
 
 #-----------------------------------------------------------------------------
 # Tab 2: Plot grid consumption 
@@ -463,13 +467,13 @@ colors = ['#1e00ff',
 # y axis values
 ave_grid_hourly = total_grid_hourly / hour_tally
 
-fig_grid_cons = make_subplots(rows=1,cols=1)
+fig_grid_cons = make_subplots(rows=1, cols=1)
 for i in range(len(months)):
-    fig_grid_cons.add_trace(go.Scatter(x=[x for x in range(24)], y=ave_grid_hourly[:,i], 
-                             mode="lines", name=months[i], line_color=colors[i]),
+    fig_grid_cons.add_trace(go.Scatter(x=[x for x in range(24)], y=ave_grid_hourly[:, i],
+                            mode="lines", name=months[i], line_color=colors[i]),
                             row=1, col=1)
     
 fig_grid_cons.update_xaxes(title_text="Time of day (hour)", row=1, col=1)
-fig_grid_cons.update_yaxes(title_text="Average kWh from grid", range=[-1,15], row=1, col=1)
+fig_grid_cons.update_yaxes(title_text="Average kWh from grid", range=[-1, 15], row=1, col=1)
 fig_grid_cons.update_layout(title_text="Average energy needed from grid per hour by month", 
                             title_x=0.5, height=650)

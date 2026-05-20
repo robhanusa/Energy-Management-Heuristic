@@ -4,52 +4,60 @@ Created on Wed Aug  9 07:55:36 2023
 
 @author: rhanusa
 """
-
-import numpy as np
-import plant_components as pc
-from plant_components import pph
-import weather_energy_components as wec
-from weather_energy_components import years
 import time
+import numpy as np
+
+from . import plant_components as pc
+from . import weather_energy_components as wec
+from .plant_components import pph
+from .weather_energy_components import years
+
 
 # Capex lifetime to calculate value of capex per year
 capex_life = 10
 
+
 def generate_wt_specs(wt):
     wind_turbine_specs = {
-        "cut_in": 13, # km/h
-        "rated_speed": 50, # km/h
-        "cut_out": 100, # km/h
-        "max_energy": 1000, # kW
+        "cut_in": 13,  # km/h
+        "rated_speed": 50,  # km/h
+        "cut_out": 100,  # km/h
+        "max_energy": 1000,  # kW
         "count": wt,
-        "cost": wt*1.5*10**6 # EUR/MW 
+        "cost": wt * 1.5 * 10 ** 6  # EUR/MW
         }
     
     return wind_turbine_specs
 
+
 def generate_sp_specs(sp):
     solar_panel_specs = {
-        "area": sp, # m^2
+        "area": sp,  # m^2
         "efficiency": 0.1,
-        "cost": sp*200/1.1 # $200/m2 (/1.1 eur to usd)
+        "cost": sp * 200 / 1.1  # $200/m2 (/1.1 eur to usd)
         }
     
     return solar_panel_specs
 
+
 def generate_b_specs(b):
     battery_specs = { 
-        "max_charge": b, # kWh
-        "cost": 1000*b
+        "max_charge": b,  # kWh
+        "cost": 1000 * b
         }
     
     return battery_specs
 
-# Pre-calculate forecast data. The forecast contains the total predicted energy generation
-# over (1) the next 3 hours, and (2) hours 4-6 after the present. As the energy generation
-# is dependent on solar panel coverage and number of wind turbines, forecasts are made
-# for every combination of sp and wt values input in the DOE. Here, a perfect forecast
-# is assumed, so real weather data is used.
+
 def prep_forecast(parameters):
+    """
+    Pre-calculate forecast data. The forecast contains the total predicted energy generation
+    over (1) the next 3 hours, and (2) hours 4-6 after the present. As the energy generation
+    is dependent on solar panel coverage and number of wind turbines, forecasts are made
+    for every combination of sp and wt values input in the DOE. Here, a perfect forecast
+    is assumed, so real weather data is used.
+
+    """
     wt_list = parameters["wt_list"]
     sp_list = parameters["sp_list"]
     
@@ -75,10 +83,12 @@ def prep_forecast(parameters):
     return forecast_store
 
 
-# Run a single DOE scenario to calculate profit at specified conditions in 'run'
 def run_scenario(forecast_store, parameters, run):
+    """
+    Run a single DOE scenario to calculate profit at specified conditions in 'run'
+    """
     
-    # factor levels are between 0 and 2 to match indicies 
+    # factor levels are between 0 and 2 to match indices
     # wt is a special case because only 2 levels are considered
     wt_index = int(run["wt_level"]) if int(run["wt_level"]) == 0 else 1
     sp_index = int(run["sp_level"]) 
@@ -113,11 +123,11 @@ def run_scenario(forecast_store, parameters, run):
         "c3": c3
         }
 
-    # initialize counters
-    e_from_grid = 0 # kwh
-    e_to_grid = 0 # kwh
-    total_renewable = 0 # kwh
-    total_sx = 0 # mol
+    # Initialize counters
+    e_from_grid = 0  # kwh
+    e_to_grid = 0  # kwh
+    total_renewable = 0  # kwh
+    total_sx = 0  # mol
     
     # Initiate other necessary variables
     r2_prev = 0 
@@ -146,14 +156,14 @@ def run_scenario(forecast_store, parameters, run):
             
             # Energy distribution for current period
             energy_tally, r2_e_prev, energy_flow = wec.distribute_energy(p_renew_t_actual,
-                                                            p_renew_tmin1,
-                                                            energy_tally, 
-                                                            r2_e_prev, 
-                                                            energy_flow, 
-                                                            battery, 
-                                                            b_sp_constants,
-                                                            reactor2,
-                                                            forecast)
+                                                                         p_renew_tmin1,
+                                                                         energy_tally,
+                                                                         r2_e_prev,
+                                                                         energy_flow,
+                                                                         battery,
+                                                                         b_sp_constants,
+                                                                         reactor2,
+                                                                         forecast)
                    
             # Update battery charge
             battery.charge += wec.battery_charge_differential(energy_flow.to_battery, battery)
@@ -175,23 +185,26 @@ def run_scenario(forecast_store, parameters, run):
                 
         p_renew_tmin1 = p_renew_t_actual
     
-    # spread capex cost over 'capex_life' in years
+    # Spread capex cost over 'capex_life' in years
     capex = (battery_specs["cost"] + solar_panel_specs["cost"] + wind_turbine_specs["cost"])/capex_life
     
     # Target production is 240 kmol S per year, so it is assumed that S above this 
     # value is worth 0
-    revenue = (9.6*min(total_sx, 240000*years) + 0.1*e_to_grid)/years # revenue / year
+    revenue = (9.6*min(total_sx, 240000*years) + 0.1*e_to_grid)/years  # revenue / year
     
     # Roughly 15 kW required to make 1 mol S
-    opex = 0.25*e_from_grid/years # opex / year
+    opex = 0.25*e_from_grid/years  # opex / year
     
-    profit = revenue - opex - capex # profit / year
+    profit = revenue - opex - capex  # profit / year
     
     return profit, revenue, opex, capex, total_sx, e_to_grid, e_from_grid
 
-# This is the most CPU intensive function that runs run_scenario function for each 
-# run in the DOE
-def run_doe(doe, parameters, forecast_store = 0, show_run_status = True ):
+
+def run_doe(doe, parameters, forecast_store=0, show_run_status=True):
+    """
+        This is the most CPU intensive function that runs run_scenario function for each
+        run in the DOE
+    """
     
     doe[["profit", "revenue", "opex", "capex", "total_sx", "e_to_grid", "e_from_grid"]] = np.zeros([len(doe), 7])
     
