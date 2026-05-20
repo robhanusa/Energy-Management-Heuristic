@@ -1,4 +1,10 @@
 # Reactor-Dash-App
+This project was created in 2023 using a customized heuristic approach for the energy management of a chemical
+plant that is powered by variable renewable energy resources, accompanied by a battery energy storage system (BESS).
+An example of the impact of the decisions made as a result of the heuristic are shown in the dash app described in the 
+Introduction section. The Description of Model section details the heuristic itself. Heuristic parameters were tuned
+using simulation optimization, and this analysis is detailed in [DOE.ipynb](DOE.ipynb).
+
 ## Introduction
 This is a Dash app created to model a series of reactors powered by renewable energy sources, using real 
 weather data and a model plant containing a system of reactors, a condenser, and filter. The top 
@@ -30,16 +36,15 @@ Winter months are colored blue, and this fades to red as the summer months appro
 <div align="center"><i>Figure 3: Graph of the average energy grid demand per hour by month.</i></div>
 <br>
 
-Finally, the plant capex components and several process control constants are optimized by 
+Finally, the plant CAPEX components and several process control constants are optimized by 
 running multiple simulations in a DOE format and maximizing the predicted profitability for 
-different configurations. Machine learning is used to create a regression model and features are
+different configurations, in a process called simulation optimization. Machine learning is 
+used to create a regression model and features are
 eliminated using a custom-made backward elimination function. The code and a detailed description 
 of how this done is available in [DOE.ipynb](DOE.ipynb).
 
 ## Instructions
 To run the app, follow the steps below:
-* Save app.py, dashboard_components.py, plant_components.py, weather_energy_components.py, input_specs.py,
-wind_solar_2013-2022_open-meteo.com.csv, and the assets folder in the same location.
 * Run app.py
 * In the console, a message will appear similar to "Dash is running on http://127.0.0.1:XXXX/".
 Copy the address into a browser window. This app was developed using Chrome.
