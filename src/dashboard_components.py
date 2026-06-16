@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May 17 09:30:04 2023
-
-@author: rhanusa
-"""
 import math
 import numpy as np
 import plotly.graph_objects as go
@@ -35,7 +29,7 @@ condenser_e = np.zeros(num_periods)
 generated_kw = np.zeros(num_periods)
 generated_kw_forecast = np.zeros(num_periods)
 consumed_kw = np.zeros(num_periods)
-battery_charge = [bat_start_charge]*(num_periods)
+battery_charge = [bat_start_charge] * (num_periods)
 kw_to_battery_arr = np.zeros(num_periods)
 grid_e = np.zeros(num_periods) 
 r_1_1_sat = np.zeros(num_periods)
@@ -43,10 +37,10 @@ r_1_2_sat = np.zeros(num_periods)
 r_1_3_sat = np.zeros(num_periods)
 sx_sat = np.zeros(num_periods)
 sx_filter_changes = np.zeros(num_periods)
-r1_changovers = np.zeros(num_periods)
-r1_1_state = ["idle"]*(num_periods)
-r1_2_state = ["idle"]*(num_periods)
-r1_3_state = ["idle"]*(num_periods)
+r1_changeovers = np.zeros(num_periods)
+r1_1_state = ["idle"] * (num_periods)
+r1_2_state = ["idle"] * (num_periods)
+r1_3_state = ["idle"] * (num_periods)
 
 bat_sp_arr = np.zeros(num_periods)
 e_t_arr = np.zeros(num_periods)
@@ -103,6 +97,7 @@ for hour in range(wec.data_length - 12):
                                                                      energy_flow,
                                                                      battery,
                                                                      ins.b_sp_constants,
+                                                                     ins.reactor_specs,
                                                                      reactor2,
                                                                      forecast_aggregated)
         
@@ -132,7 +127,7 @@ for hour in range(wec.data_length - 12):
         r1_1_state[period] = reactor1_1.state
         r1_2_state[period] = reactor1_2.state
         r1_e[period] = energy_flow.to_r1
-        r1_changovers[period] = r1_changeovers_tally
+        r1_changeovers[period] = r1_changeovers_tally
         
         # Update Sx filter saturation and tally filter changes
         sx_sat_current, sx_filter_tally = pc.update_sx_filter(sx_sat_current, sx_filter_tally, sx_filter, r2_sx_current)
@@ -346,7 +341,7 @@ def update_data(n_intervals, start_watch, counter):
                                   tickvals=[round(r1_3_saturation)])
         
         # Tally for r1 changeovers
-        r1_changeover_tally = r1_changovers[period]
+        r1_changeover_tally = r1_changeovers[period]
         
         # Counter for Sx filter changes
         sx_changeovers = sx_filter_changes[period]

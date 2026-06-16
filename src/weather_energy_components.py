@@ -99,23 +99,21 @@ def calc_b_sp(b_sp_constants, forecast_aggregated, battery, p_min, p_max):
 
 def distribute_energy(p_renew_t_actual,
                       p_renew_tmin1,
-                      energy_tally, 
-                      r2_e_prev, 
-                      energy_flow, 
-                      battery, 
+                      energy_tally,
+                      r2_e_prev,
+                      energy_flow,
+                      battery,
                       b_sp_constants,
-                      reactor2, 
+                      reactor_specs,
+                      reactor2,
                       forecast_aggregated):
-    
-    r1_max = 50
-    r1_min = 50
-    
-    r2_max = 1000 
-    r2_min = 50
 
-    p_min = r1_min + r2_min + allocate_p_to_condenser(r2_min, reactor2)
-    
-    p_max = r1_max + r2_max + allocate_p_to_condenser(r2_max, reactor2)
+    r1_energy = reactor_specs["r1_energy"]
+    r2_max = reactor_specs["r2_max"]
+    r2_min = reactor_specs["r2_min"]
+
+    p_min = r1_energy + r2_min + allocate_p_to_condenser(r2_min, reactor2)
+    p_max = r1_energy + r2_max + allocate_p_to_condenser(r2_max, reactor2)
     
     # For the moment we assume perfect forecasting, but the line below is where
     # we can adapt for different levels of forecasting accuracy.
@@ -133,8 +131,8 @@ def distribute_energy(p_renew_t_actual,
         energy_tally += 1
 
     else:
-        energy_flow.to_r1 = r1_min
-        energy_flow.to_r2 = min(r2_max, max(r2_min, (p_total - r1_min) / (1 + condenser_constant)))
+        energy_flow.to_r1 = r1_energy
+        energy_flow.to_r2 = min(r2_max, max(r2_min, (p_total - r1_energy) / (1 + condenser_constant)))
         energy_flow.to_condenser = energy_flow.to_r2 * condenser_constant
         
     energy_flow.to_battery = allocate_p_to_battery(energy_flow, battery, p_renew_t_actual)

@@ -30,3 +30,9 @@ b_sp_constants = {
     "c2": 1,
     "c3": 0
     }
+
+reactor_specs = {
+    "r1_energy": 50,   # kW — constant demand (r1_max == r1_min by design)
+    "r2_max": 1000,    # kW
+    "r2_min": 50,      # kW
+    }

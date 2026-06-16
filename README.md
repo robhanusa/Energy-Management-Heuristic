@@ -211,7 +211,7 @@ Where:
 * $b^{size}$ is the absolute maximum charge that the battery is capable of storing.
 * $b^{max}$ is the maximum charge allowed on the battery during production.
 * $b^{min}$ is the minimum charge allowed on the battery during production.
-* $n_1$, $n_2$, $n_3$ are constants that can be tuned, as is done in the DOE in [long_term_output.ipynb](long_term_output.ipynb)
+* $n_1$, $n_2$, $n_3$ are constants that can be tuned, as is done in the DOE in [DOE.ipynb](DOE.ipynb)
 
 In this way, the battery setpoint is allowed to run low when the forecasted energy production for the 
 next 6 hours is high, and the setpoint increases when the expected energy production is low. Note that the 
