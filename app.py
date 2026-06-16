@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon May  8 12:43:06 2023
-
-@author: rhanusa
-"""
 import dash
 import dash_bootstrap_components as dbc
 import dash_daq as daq

@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug  9 07:55:36 2023
-
-@author: rhanusa
-"""
 import time
 import numpy as np
 

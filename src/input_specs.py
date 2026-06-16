@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jul  3 14:24:51 2023
-
-@author: rhanusa
-"""
-
 # Inputs
 battery_specs = { # Using battery at https://www.backupbatterypower.com/products/1-144-kwh-industrial-battery-backup-and-energy-storage-systems-ess-277-480-three-phase?pr_prod_strat=use_description&pr_rec_id=97fba9aea&pr_rec_pid=6561192214696&pr_ref_pid=6561191100584&pr_seq=uniform
     "max_charge": 1144, # kWh

@@ -23,7 +23,7 @@ bat_start_charge = 0.5 * ins.battery_specs["max_charge"]
 idle_start_length = 500
 x = [i * 60 / pph for i in range(-idle_start_length, 1)]
 
-num_periods = wec.data_length*pph + idle_start_length
+num_periods = wec.data_length * pph + idle_start_length
 
 # Create arrays to store all calculated data that will be displayed.
 # This helps minimize the calculations occurring in the callback function and

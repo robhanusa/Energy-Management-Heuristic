@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May 17 07:53:37 2023
-
-@author: rhanusa
-"""
 import pandas as pd
 from .plant_components import pph
 

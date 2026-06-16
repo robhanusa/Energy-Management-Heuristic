@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May 17 07:44:15 2023
-
-@author: rhanusa
-"""
 import math
 
 # Periods per hour. Reactor states will be calculated "pph" times per hour. eg
@@ -31,11 +25,8 @@ class Reactor1():
         self.sat_factor = .01  # How fast r1 gets saturated per mol COS produced
         self.clean_speed = 10  # How fast r1 gets cleaned
         
-    @classmethod 
-    def react(cls, sx_produced):
-        cos_produced = sx_produced
-        Reactor1.state = "active"
-        return cos_produced
+    def react(self, sx_produced):
+        return sx_produced
 
 
 class Reactor2: 
@@ -49,9 +40,9 @@ class Reactor2:
     def ss_output(cls, energy):
         return 140 / (1 + math.exp(-energy / 200 + 3)) - 6 #reduced this by a factor of 10
     
-    def react(cls, energy, prev):
-        Reactor2.state = "active"
-        e_t = Reactor2.ss_output(energy)-prev
+    def react(self, energy, prev):
+        self.state = "active"
+        e_t = Reactor2.ss_output(energy) - prev
         if e_t > 0:
             return prev + e_t * (1 - 1 / (math.exp(1 / (pph * Reactor2.ku))))
         else:
